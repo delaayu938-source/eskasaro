@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Voting Pemilos SMKN 1 Wonosegoro</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f4f6f9; color: #333; }
+        header { background: #1e293b; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 1.1rem; }
+        .btn-header { background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        /* Form Inputs */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; }
+        .btn-submit { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 5px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        
+        /* Candidate Cards */
+        .kandidat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
+        .kandidat-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px; background: #fff; text-align: left; display: flex; flex-direction: column; justify-content: space-between; }
+        .kandidat-header { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 15px; }
+        .kandidat-header h3 { color: #1e293b; font-size: 1.2rem; }
+        .visi-misi-box { font-size: 0.88rem; color: #475569; line-height: 1.5; }
+        .visi-misi-box h4 { color: #2563eb; margin: 10px 0 5px 0; }
+        .visi-misi-box ol { padding-left: 18px; }
+        .visi-misi-box li { margin-bottom: 4px; }
+        .btn-vote { background: #2563eb; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold; font-size: 1rem; }
+        .btn-vote:hover { background: #1d4ed8; }
+        
+        /* Hidden Sections */
+        .hidden { display: none; }
+        
+        /* Admin Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table, th, td { border: 1px solid #cbd5e1; }
+        th, td { padding: 10px; text-align: left; font-size: 0.9rem; }
+        th { background: #f1f5f9; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>PEMILOS SMKN 1 WONOSEGORO</h1>
+        <button id="navAdminBtn" class="btn-header" onclick="showAdminLogin()">Login Admin</button>
+    </header>
+
+    <div class="container">
+
+        <!-- 1. HALAMAN LOGIN SISWA -->
+        <div id="siswaLoginSection" class="card">
+            <h2>Login Siswa</h2>
+            <p style="color: #666; margin-bottom: 15px;">Masukkan Nomor Induk Siswa (NIS) untuk memilih pasangan calon.</p>
+            <div class="form-group">
+                <label>Nomor Induk Siswa (NIS)</label>
+                <input type="text" id="nisInput" placeholder="Contoh: 1001">
+            </div>
+            <button class="btn-submit" onclick="loginSiswa()">Masuk & Pilih</button>
+            <p id="siswaLoginErr" style="color: red; margin-top: 10px; font-weight: bold;"></p>
+        </div>
+
+        <!-- 2. HALAMAN VOTING SISWA -->
+        <div id="votingSection" class="card hidden">
+            <h2>Surat Suara Pemilos</h2>
+            <p>Selamat datang, <b id="namaSiswaTxt"></b>! Silakan tentukan pilihanmu dengan bijak.</p>
+            <div id="kandidatContainer" class="kandidat-grid"></div>
+        </div>
+
+        <!-- 3. HALAMAN LOGIN ADMIN -->
+        <div id="adminLoginSection" class="card hidden">
+            <h2>Login Dashboard Admin</h2>
+            <div class="form-group">
+                <label>Username Admin</label>
+                <input type="text" id="adminUser" placeholder="Masukkan Username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="adminPass" placeholder="Masukkan Password">
+            </div>
+            <button class="btn-submit" style="background:#4f46e5;" onclick="loginAdmin()">Login Admin</button>
+            <button class="btn-submit" style="background:#64748b; margin-top: 8px;" onclick="showSiswaLogin()">Kembali ke Login Siswa</button>
+            <p id="adminLoginErr" style="color: red; margin-top: 10px; font-weight: bold;"></p>
+        </div>
+
+        <!-- 4. DASHBOARD ADMIN -->
+        <div id="adminDashboardSection" class="card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Dashboard Admin Pemilos</h2>
+                <button onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Logout</button>
+            </div>
+            
+            <h3 style="margin-top: 20px;">Hasil Perolehan Suara</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>No Paslon</th>
+                        <th>Nama Pasangan Calon</th>
+                        <th>Jumlah Suara</th>
+                    </tr>
+                </thead>
+                <tbody id="rekapSuaraTbl"></tbody>
+            </table>
+
+            <h3 style="margin-top: 30px;">Data DPT & Status Memilih</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>NIS</th>
+                        <th>Nama Siswa</th>
+                        <th>Status Hak Pilih</th>
+                    </tr>
+                </thead>
+                <tbody id="dptTbl"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        // ================= DATA PASLON (BERDASARKAN PERMINTAAN) =================
+        const defaultKandidat = [
+            {
+                id: 1,
+                noPaslon: "01",
+                nama: "Riski Wahyu Maulana & Riski Bagus Riyanto",
+                visi: "Menjadikan OSIS SMKN 1 WONOSEGORO sebagai penggerak perubahan yang aktif, kreatif, disiplin, religius, dan berprestasi serta menjadi wadah aspirasi bagi seluruh siswa untuk mengembangkan potensi diri, dan meningkatkan keimanan dan ketaqwaan, dan juga meningkatkan kepedulian lingkungan dan kesehatan.",
+                misi: [
+                    "Meningkatkan keimanan dan ketaqwaan.",
+                    "Meningkatkan karakter, kedisiplinan, dan rasa tanggung jawab siswa.",
+                    "Mengembangkan kreativitas dan potensi siswa.",
+                    "Menjadi wadah aspirasi.",
+                    "Meningkatkan kepedulian lingkungan dan kesehatan.",
+                    "Membangun kekompakan serta kerja sama dalam menciptakan suasana sekolah yang harmonis dan kebersamaan."
+                ],
+                suara: 0
+            },
+            {
+                id: 2,
+                noPaslon: "02",
+                nama: "Wahyu Novi Asyifah & Cristian Lionel",
+                visi: "Menjadikan OSIS SMK Negeri 1 Wonosegoro sebagai wadah aspirasi yang inovatif, solutif, dan adaptif, serta mengembangkan potensi siswa yang aktif, kreatif, berkarakter, dan berani berpendapat demi terciptanya lingkungan sekolah yang progresif.",
+                misi: [
+                    "Meningkatkan prestasi siswa dalam bidang akademik maupun nonakademik dengan mendorong siswa untuk berpikir kritis, kreatif, bertanggung jawab, dan berwawasan luas.",
+                    "Meningkatkan kualitas belajar dan kemampuan manajemen waktu agar siswa mampu berkembang, berprestasi, serta memiliki karakter yang disiplin.",
+                    "Membentuk siswa SMKN 1 Wonosegoro yang berkarakter, bijak, inspiratif, dan berlandaskan nilai Ketuhanan Yang Maha Esa, serta peduli terhadap sesama.",
+                    "Mewujudkan lingkungan sekolah yang bersih, sehat, dan nyaman dengan menumbuhkan kepedulian siswa terhadap lingkungan dan sesama.",
+                    "Membangun hubungan yang baik dan berkualitas antara siswa, guru, dan warga sekolah, melalui kerja sama dan komunikasi yang positif.",
+                    "Mengembangkan program kerja OSIS yang sesuai dengan aspirasi, minat, dan kebutuhan seluruh siswa, serta melanjutkan program kerja periode sebelumnya yang belum terlaksana."
+                ],
+                suara: 0
+            }
+        ];
+
+        // Data Siswa DPT Contoh
+        const defaultDPT = [
+            { nis: "1001", nama: "Ahmad Fauzi", sudahMemilih: false },
+            { nis: "1002", nama: "Siti Nurhaliza", sudahMemilih: false },
+            { nis: "1003", nama: "Budi Pratama", sudahMemilih: false },
+            { nis: "1004", nama: "Dewi Anggraini", sudahMemilih: false }
+        ];
+
+        // Simpan Data di Browser
+        localStorage.setItem('database_kandidat_v2', JSON.stringify(defaultKandidat));
+        if (!localStorage.getItem('database_dpt')) {
+            localStorage.setItem('database_dpt', JSON.stringify(defaultDPT));
+        }
+
+        let activeSiswaNIS = null;
+
+        // ================= LOGIKA SISWA =================
+        function loginSiswa() {
+            const nis = document.getElementById('nisInput').value.trim();
+            const dpt = JSON.parse(localStorage.getItem('database_dpt'));
+            const siswa = dpt.find(s => s.nis === nis);
+
+            if (!siswa) {
+                document.getElementById('siswaLoginErr').innerText = "NIS tidak terdaftar di DPT!";
+                return;
+            }
+            if (siswa.sudahMemilih) {
+                document.getElementById('siswaLoginErr').innerText = "Kamu sudah menggunakan hak pilih sebelumnya!";
+                return;
+            }
+
+            activeSiswaNIS = nis;
+            document.getElementById('namaSiswaTxt').innerText = siswa.nama;
+            document.getElementById('siswaLoginSection').classList.add('hidden');
+            document.getElementById('votingSection').classList.remove('hidden');
+            renderKandidat();
+        }
+
+        function renderKandidat() {
+            const kandidat = JSON.parse(localStorage.getItem('database_kandidat_v2'));
+            const container = document.getElementById('kandidatContainer');
+            container.innerHTML = "";
+
+            kandidat.forEach(k => {
+                let misiList = k.misi.map(m => `<li>${m}</li>`).join('');
+                container.innerHTML += `
+                    <div class="kandidat-card">
+                        <div>
+                            <div class="kandidat-header">
+                                <h2 style="color:#2563eb;">PASLON ${k.noPaslon}</h2>
+                                <h3>${k.nama}</h3>
+                            </div>
+                            <div class="visi-misi-box">
+                                <h4>VISI:</h4>
+                                <p>"${k.visi}"</p>
+                                <h4>MISI:</h4>
+                                <ol>${misiList}</ol>
+                            </div>
+                        </div>
+                        <button class="btn-vote" onclick="pilihKandidat(${k.id}, '${k.nama}')">PILIH PASLON ${k.noPaslon}</button>
+                    </div>
+                `;
+            });
+        }
+
+        function pilihKandidat(id, namaPaslon) {
+            if(!confirm(`Apakah kamu yakin ingin memilih Paslon:\n${namaPaslon}?`)) return;
+
+            let kandidat = JSON.parse(localStorage.getItem('database_kandidat_v2'));
+            let dpt = JSON.parse(localStorage.getItem('database_dpt'));
+
+            kandidat = kandidat.map(k => k.id === id ? { ...k, suara: k.suara + 1 } : k);
+            dpt = dpt.map(s => s.nis === activeSiswaNIS ? { ...s, sudahMemilih: true } : s);
+
+            localStorage.setItem('database_kandidat_v2', JSON.stringify(kandidat));
+            localStorage.setItem('database_dpt', JSON.stringify(dpt));
+
+            alert("Suara kamu berhasil disimpan! Terima kasih telah berpartisipasi.");
+            location.reload();
+        }
+
+        // ================= LOGIKA ADMIN =================
+        function showAdminLogin() {
+            document.getElementById('siswaLoginSection').classList.add('hidden');
+            document.getElementById('votingSection').classList.add('hidden');
+            document.getElementById('adminLoginSection').classList.remove('hidden');
+        }
+
+        function showSiswaLogin() {
+            document.getElementById('adminLoginSection').classList.add('hidden');
+            document.getElementById('siswaLoginSection').classList.remove('hidden');
+        }
+
+        function loginAdmin() {
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+
+            // Kredensial Admin Sesuai Permintaan
+            if (user === "delaayu" && pass === "ditacantik") {
+                document.getElementById('adminLoginSection').classList.add('hidden');
+                document.getElementById('adminDashboardSection').classList.remove('hidden');
+                renderDashboardAdmin();
+            } else {
+                document.getElementById('adminLoginErr').innerText = "Username atau Password Admin Salah!";
+            }
+        }
+
+        function renderDashboardAdmin() {
+            const kandidat = JSON.parse(localStorage.getItem('database_kandidat_v2'));
+            const dpt = JSON.parse(localStorage.getItem('database_dpt'));
+
+            const rekapTbl = document.getElementById('rekapSuaraTbl');
+            rekapTbl.innerHTML = "";
+            kandidat.forEach(k => {
+                rekapTbl.innerHTML += `<tr><td><b>${k.noPaslon}</b></td><td>${k.nama}</td><td><b>${k.suara} Suara</b></td></tr>`;
+            });
+
+            const dptTbl = document.getElementById('dptTbl');
+            dptTbl.innerHTML = "";
+            dpt.forEach(s => {
+                const statusBadge = s.sudahMemilih 
+                    ? `<b style="color: green;">Sudah Memilih</b>` 
+                    : `<span style="color: red;">Belum Memilih</span>`;
+                dptTbl.innerHTML += `<tr><td>${s.nis}</td><td>${s.nama}</td><td>${statusBadge}</td></tr>`;
+            });
+        }
+
+        function logoutAdmin() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
