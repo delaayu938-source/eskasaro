@@ -57,7 +57,7 @@
             <p style="color: #666; margin-bottom: 15px;">Masukkan Nomor Induk Siswa (NIS) untuk memilih pasangan calon.</p>
             <div class="form-group">
                 <label>Nomor Induk Siswa (NIS)</label>
-                <input type="text" id="nisInput" placeholder="Contoh: 1001">
+                <input type="text" id="nisInput" placeholder="Contoh: 6650">
             </div>
             <button class="btn-submit" onclick="loginSiswa()">Masuk & Pilih</button>
             <p id="siswaLoginErr" style="color: red; margin-top: 10px; font-weight: bold;"></p>
@@ -66,7 +66,7 @@
         <!-- 2. HALAMAN VOTING SISWA -->
         <div id="votingSection" class="card hidden">
             <h2>Surat Suara Pemilos</h2>
-            <p>Selamat datang, <b id="namaSiswaTxt"></b>! Silakan tentukan pilihanmu dengan bijak.</p>
+            <p>Selamat datang, siswa dengan NIS <b id="namaSiswaTxt"></b>! Silakan tentukan pilihanmu dengan bijak.</p>
             <div id="kandidatContainer" class="kandidat-grid"></div>
         </div>
 
@@ -110,7 +110,6 @@
                 <thead>
                     <tr>
                         <th>NIS</th>
-                        <th>Nama Siswa</th>
                         <th>Status Hak Pilih</th>
                     </tr>
                 </thead>
@@ -120,85 +119,88 @@
 
     </div>
 
+    <!-- Library Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
-        // ================= DATA PASLON (BERDASARKAN PERMINTAAN) =================
+        // Inisialisasi Supabase
+        const SUPABASE_URL = 'https://gxjesxulkcyncftuasym.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_msPVoHQxlLyjgnw6h1-cwA_V0hnA_kv';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const defaultKandidat = [
             {
                 id: 1,
                 noPaslon: "01",
                 nama: "Riski Wahyu Maulana & Riski Bagus Riyanto",
-                visi: "Menjadikan OSIS SMKN 1 WONOSEGORO sebagai penggerak perubahan yang aktif, kreatif, disiplin, religius, dan berprestasi serta menjadi wadah aspirasi bagi seluruh siswa untuk mengembangkan potensi diri, dan meningkatkan keimanan dan ketaqwaan, dan juga meningkatkan kepedulian lingkungan dan kesehatan.",
+                visi: "Menjadikan OSIS SMKN 1 WONOSEGORO sebagai penggerak perubahan yang aktif, kreatif, disiplin, religius, dan berprestasi...",
                 misi: [
                     "Meningkatkan keimanan dan ketaqwaan.",
                     "Meningkatkan karakter, kedisiplinan, dan rasa tanggung jawab siswa.",
                     "Mengembangkan kreativitas dan potensi siswa.",
                     "Menjadi wadah aspirasi.",
                     "Meningkatkan kepedulian lingkungan dan kesehatan.",
-                    "Membangun kekompakan serta kerja sama dalam menciptakan suasana sekolah yang harmonis dan kebersamaan."
-                ],
-                suara: 0
+                    "Membangun kekompakan serta kerja sama..."
+                ]
             },
             {
                 id: 2,
                 noPaslon: "02",
                 nama: "Wahyu Novi Asyifah & Cristian Lionel",
-                visi: "Menjadikan OSIS SMK Negeri 1 Wonosegoro sebagai wadah aspirasi yang inovatif, solutif, dan adaptif, serta mengembangkan potensi siswa yang aktif, kreatif, berkarakter, dan berani berpendapat demi terciptanya lingkungan sekolah yang progresif.",
+                visi: "Menjadikan OSIS SMK Negeri 1 Wonosegoro sebagai wadah aspirasi yang inovatif, solutif, dan adaptif...",
                 misi: [
-                    "Meningkatkan prestasi siswa dalam bidang akademik maupun nonakademik dengan mendorong siswa untuk berpikir kritis, kreatif, bertanggung jawab, dan berwawasan luas.",
-                    "Meningkatkan kualitas belajar dan kemampuan manajemen waktu agar siswa mampu berkembang, berprestasi, serta memiliki karakter yang disiplin.",
-                    "Membentuk siswa SMKN 1 Wonosegoro yang berkarakter, bijak, inspiratif, dan berlandaskan nilai Ketuhanan Yang Maha Esa, serta peduli terhadap sesama.",
-                    "Mewujudkan lingkungan sekolah yang bersih, sehat, dan nyaman dengan menumbuhkan kepedulian siswa terhadap lingkungan dan sesama.",
-                    "Membangun hubungan yang baik dan berkualitas antara siswa, guru, dan warga sekolah, melalui kerja sama dan komunikasi yang positif.",
-                    "Mengembangkan program kerja OSIS yang sesuai dengan aspirasi, minat, dan kebutuhan seluruh siswa, serta melanjutkan program kerja periode sebelumnya yang belum terlaksana."
-                ],
-                suara: 0
+                    "Meningkatkan prestasi siswa dalam bidang akademik maupun nonakademik...",
+                    "Meningkatkan kualitas belajar dan kemampuan manajemen waktu...",
+                    "Membentuk siswa SMKN 1 Wonosegoro yang berkarakter...",
+                    "Mewujudkan lingkungan sekolah yang bersih, sehat, dan nyaman...",
+                    "Membangun hubungan yang baik dan berkualitas...",
+                    "Mengembangkan program kerja OSIS..."
+                ]
             }
         ];
-
-        // Data Siswa DPT Contoh
-        const defaultDPT = [
-            { nis: "1001", nama: "Ahmad Fauzi", sudahMemilih: false },
-            { nis: "1002", nama: "Siti Nurhaliza", sudahMemilih: false },
-            { nis: "1003", nama: "Budi Pratama", sudahMemilih: false },
-            { nis: "1004", nama: "Dewi Anggraini", sudahMemilih: false }
-        ];
-
-        // Simpan Data di Browser
-        localStorage.setItem('database_kandidat_v2', JSON.stringify(defaultKandidat));
-        if (!localStorage.getItem('database_dpt')) {
-            localStorage.setItem('database_dpt', JSON.stringify(defaultDPT));
-        }
 
         let activeSiswaNIS = null;
 
-        // ================= LOGIKA SISWA =================
-        function loginSiswa() {
-            const nis = document.getElementById('nisInput').value.trim();
-            const dpt = JSON.parse(localStorage.getItem('database_dpt'));
-            const siswa = dpt.find(s => s.nis === nis);
+        // LOGIKA SISWA (CEK NIS KE SUPABASE)
+        async function loginSiswa() {
+            const nisInput = document.getElementById('nisInput').value.trim();
+            const errElem = document.getElementById('siswaLoginErr');
+            errElem.innerText = "";
 
-            if (!siswa) {
-                document.getElementById('siswaLoginErr').innerText = "NIS tidak terdaftar di DPT!";
-                return;
-            }
-            if (siswa.sudahMemilih) {
-                document.getElementById('siswaLoginErr').innerText = "Kamu sudah menggunakan hak pilih sebelumnya!";
+            if (!nisInput) {
+                errElem.innerText = "Masukkan NIS terlebih dahulu!";
                 return;
             }
 
-            activeSiswaNIS = nis;
-            document.getElementById('namaSiswaTxt').innerText = siswa.nama;
+            // Ambil data NIS dari Supabase
+            const { data, error } = await _supabase
+                .from('pemilih')
+                .select('*')
+                .eq('nis', nisInput)
+                .maybeSingle();
+
+            if (error || !data) {
+                errElem.innerText = "NIS tidak terdaftar di database!";
+                return;
+            }
+
+            if (data.pilihan !== null && data.pilihan !== "") {
+                errElem.innerText = "NIS ini sudah digunakan untuk memilih!";
+                return;
+            }
+
+            activeSiswaNIS = data.nis;
+            document.getElementById('namaSiswaTxt').innerText = activeSiswaNIS;
             document.getElementById('siswaLoginSection').classList.add('hidden');
             document.getElementById('votingSection').classList.remove('hidden');
             renderKandidat();
         }
 
         function renderKandidat() {
-            const kandidat = JSON.parse(localStorage.getItem('database_kandidat_v2'));
             const container = document.getElementById('kandidatContainer');
             container.innerHTML = "";
 
-            kandidat.forEach(k => {
+            defaultKandidat.forEach(k => {
                 let misiList = k.misi.map(m => `<li>${m}</li>`).join('');
                 container.innerHTML += `
                     <div class="kandidat-card">
@@ -214,29 +216,30 @@
                                 <ol>${misiList}</ol>
                             </div>
                         </div>
-                        <button class="btn-vote" onclick="pilihKandidat(${k.id}, '${k.nama}')">PILIH PASLON ${k.noPaslon}</button>
+                        <button class="btn-vote" onclick="pilihKandidat('${k.noPaslon}', '${k.nama}')">PILIH PASLON ${k.noPaslon}</button>
                     </div>
                 `;
             });
         }
 
-        function pilihKandidat(id, namaPaslon) {
-            if(!confirm(`Apakah kamu yakin ingin memilih Paslon:\n${namaPaslon}?`)) return;
+        // SIMPAN HAK PILIH KE SUPABASE
+        async function pilihKandidat(noPaslon, namaPaslon) {
+            if(!confirm(`Apakah kamu yakin ingin memilih Paslon ${noPaslon}:\n${namaPaslon}?`)) return;
 
-            let kandidat = JSON.parse(localStorage.getItem('database_kandidat_v2'));
-            let dpt = JSON.parse(localStorage.getItem('database_dpt'));
+            const { error } = await _supabase
+                .from('pemilih')
+                .update({ pilihan: noPaslon })
+                .eq('nis', activeSiswaNIS);
 
-            kandidat = kandidat.map(k => k.id === id ? { ...k, suara: k.suara + 1 } : k);
-            dpt = dpt.map(s => s.nis === activeSiswaNIS ? { ...s, sudahMemilih: true } : s);
-
-            localStorage.setItem('database_kandidat_v2', JSON.stringify(kandidat));
-            localStorage.setItem('database_dpt', JSON.stringify(dpt));
-
-            alert("Suara kamu berhasil disimpan! Terima kasih telah berpartisipasi.");
-            location.reload();
+            if (error) {
+                alert("Gagal menyimpan suara: " + error.message);
+            } else {
+                alert("Suara kamu berhasil disimpan! Terima kasih telah berpartisipasi.");
+                location.reload();
+            }
         }
 
-        // ================= LOGIKA ADMIN =================
+        // LOGIKA ADMIN (MEMBACA HASIL DARI SUPABASE)
         function showAdminLogin() {
             document.getElementById('siswaLoginSection').classList.add('hidden');
             document.getElementById('votingSection').classList.add('hidden');
@@ -252,7 +255,6 @@
             const user = document.getElementById('adminUser').value;
             const pass = document.getElementById('adminPass').value;
 
-            // Kredensial Admin Sesuai Permintaan
             if (user === "delaayu" && pass === "ditacantik") {
                 document.getElementById('adminLoginSection').classList.add('hidden');
                 document.getElementById('adminDashboardSection').classList.remove('hidden');
@@ -262,23 +264,33 @@
             }
         }
 
-        function renderDashboardAdmin() {
-            const kandidat = JSON.parse(localStorage.getItem('database_kandidat_v2'));
-            const dpt = JSON.parse(localStorage.getItem('database_dpt'));
+        async function renderDashboardAdmin() {
+            const { data: listPemilih, error } = await _supabase
+                .from('pemilih')
+                .select('*');
+
+            if (error) {
+                alert("Gagal memuat data admin: " + error.message);
+                return;
+            }
+
+            // Hitung suara paslon secara dinamis dari Supabase
+            let suara01 = listPemilih.filter(p => p.pilihan === '01').length;
+            let suara02 = listPemilih.filter(p => p.pilihan === '02').length;
 
             const rekapTbl = document.getElementById('rekapSuaraTbl');
-            rekapTbl.innerHTML = "";
-            kandidat.forEach(k => {
-                rekapTbl.innerHTML += `<tr><td><b>${k.noPaslon}</b></td><td>${k.nama}</td><td><b>${k.suara} Suara</b></td></tr>`;
-            });
+            rekapTbl.innerHTML = `
+                <tr><td><b>01</b></td><td>Riski Wahyu Maulana & Riski Bagus Riyanto</td><td><b>${suara01} Suara</b></td></tr>
+                <tr><td><b>02</b></td><td>Wahyu Novi Asyifah & Cristian Lionel</td><td><b>${suara02} Suara</b></td></tr>
+            `;
 
             const dptTbl = document.getElementById('dptTbl');
             dptTbl.innerHTML = "";
-            dpt.forEach(s => {
-                const statusBadge = s.sudahMemilih 
-                    ? `<b style="color: green;">Sudah Memilih</b>` 
+            listPemilih.forEach(s => {
+                const statusBadge = (s.pilihan !== null && s.pilihan !== "") 
+                    ? `<b style="color: green;">Sudah Memilih (Paslon ${s.pilihan})</b>` 
                     : `<span style="color: red;">Belum Memilih</span>`;
-                dptTbl.innerHTML += `<tr><td>${s.nis}</td><td>${s.nama}</td><td>${statusBadge}</td></tr>`;
+                dptTbl.innerHTML += `<tr><td>${s.nis}</td><td>${statusBadge}</td></tr>`;
             });
         }
 
@@ -286,75 +298,5 @@
             location.reload();
         }
     </script>
-    <!-- Library Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-  const SUPABASE_URL = 'https://gxjesxulkcyncftuasym.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_msPVoHQxlLyjgnw6h1-cwA_V0hnA_kv';
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  async function kirimSuara(namaPaslon) {
-    const nisInput = document.getElementById('nis').value.trim();
-
-    if (!nisInput) {
-      alert('Isi NIS kamu terlebih dahulu!');
-      return;
-    }
-
-   const { data, error } = await supabase
-  .from('pemilih')
-  .update({ pilihan: namaPaslon })
-  .eq('nis', nisInput);
-
-    if (error) {
-      alert('Gagal menyimpan suara: ' + error.message);
-    } else {
-      alert('Suara kamu berhasil disimpan!');
-      document.getElementById('nis').value = '';
-    }
-  }
-</script>
-    <!-- Library Supabase JS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-  // 1. Inisialisasi Supabase (Ganti URL & ANON KEY dengan milikmu)
-  const SUPABASE_URL = 'https://gxjesxulkcyncftuasym.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_msPVoHQxlLyjgnw6h1-cwA_V0hnA_kv';
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // 2. Fungsi Login NIS
-  async function handleLogin() {
-    const nisInput = document.getElementById('inputNis').value.trim();
-
-    if (!nisInput) {
-      alert('Masukkan NIS terlebih dahulu!');
-      return;
-    }
-
-    // Cari NIS di tabel 'pemilih'
-    const { data, error } = await supabase
-      .from('pemilih')
-      .select('*')
-      .eq('nis', nisInput)
-      .maybeSingle();
-
-    if (error || !data) {
-      alert('NIS tidak ditemukan! Periksa kembali NIS kamu.');
-      return;
-    }
-
-    if (data.pilihan !== null) {
-      alert('NIS ini sudah digunakan untuk memilih!');
-      return;
-    }
-
-    // Simpan NIS ke localStorage dan pindah ke tampilan voting
-    localStorage.setItem('user_nis', data.nis);
-    alert('Login berhasil! Silakan lakukan pemilihan.');
-    // Arahkan ke halaman voting atau tampilkan bagian voting
-  }
-</script>
 </body>
 </html>
