@@ -286,5 +286,35 @@
             location.reload();
         }
     </script>
+    <!-- Library Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = 'https://gxjesxulkcyncftuasym.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_msPVoHQxlLyjgnw6h1-cwA_V0hnA_kv';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function kirimSuara(namaPaslon) {
+    const nisInput = document.getElementById('nis').value.trim();
+
+    if (!nisInput) {
+      alert('Isi NIS kamu terlebih dahulu!');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('pemilih')
+      .insert([
+        { nis: nisInput, pilihan: namaPaslon }
+      ]);
+
+    if (error) {
+      alert('Gagal menyimpan suara: ' + error.message);
+    } else {
+      alert('Suara kamu berhasil disimpan!');
+      document.getElementById('nis').value = '';
+    }
+  }
+</script>
 </body>
 </html>
