@@ -302,11 +302,10 @@
       return;
     }
 
-    const { data, error } = await supabase
-      .from('pemilih')
-      .insert([
-        { nis: nisInput, pilihan: namaPaslon }
-      ]);
+   const { data, error } = await supabase
+  .from('pemilih')
+  .update({ pilihan: namaPaslon })
+  .eq('nis', nisInput);
 
     if (error) {
       alert('Gagal menyimpan suara: ' + error.message);
@@ -314,6 +313,47 @@
       alert('Suara kamu berhasil disimpan!');
       document.getElementById('nis').value = '';
     }
+  }
+</script>
+    <!-- Library Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  // 1. Inisialisasi Supabase (Ganti URL & ANON KEY dengan milikmu)
+  const SUPABASE_URL = 'https://gxjesxulkcyncftuasym.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_msPVoHQxlLyjgnw6h1-cwA_V0hnA_kv';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // 2. Fungsi Login NIS
+  async function handleLogin() {
+    const nisInput = document.getElementById('inputNis').value.trim();
+
+    if (!nisInput) {
+      alert('Masukkan NIS terlebih dahulu!');
+      return;
+    }
+
+    // Cari NIS di tabel 'pemilih'
+    const { data, error } = await supabase
+      .from('pemilih')
+      .select('*')
+      .eq('nis', nisInput)
+      .maybeSingle();
+
+    if (error || !data) {
+      alert('NIS tidak ditemukan! Periksa kembali NIS kamu.');
+      return;
+    }
+
+    if (data.pilihan !== null) {
+      alert('NIS ini sudah digunakan untuk memilih!');
+      return;
+    }
+
+    // Simpan NIS ke localStorage dan pindah ke tampilan voting
+    localStorage.setItem('user_nis', data.nis);
+    alert('Login berhasil! Silakan lakukan pemilihan.');
+    // Arahkan ke halaman voting atau tampilkan bagian voting
   }
 </script>
 </body>
