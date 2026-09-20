@@ -90,7 +90,10 @@
         <div id="adminDashboardSection" class="card hidden">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2>Dashboard Admin Pemilos</h2>
-                <button onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Logout</button>
+                <div>
+                    <button onclick="renderDashboardAdmin()" style="background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px;">🔄 Refresh Data</button>
+                    <button onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Logout</button>
+                </div>
             </div>
             
             <h3 style="margin-top: 20px;">Hasil Perolehan Suara</h3>
@@ -123,7 +126,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // Inisialisasi Supabase
         const SUPABASE_URL = 'https://gxjesxulkcyncftuasym.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4amVzeHVsa2N5bmNmdHVhc3ltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2Mzc4MTksImV4cCI6MjEwNTIxMzgxOX0.yZReuvlYqydTWTM7OaRJBrBRZ-O0PgxkSSoFJLGg4L4';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -160,8 +162,9 @@
         ];
 
         let activeSiswaNIS = null;
+        let autoRefreshInterval = null;
 
-        // LOGIKA SISWA (CEK NIS KE SUPABASE)
+        // LOGIKA SISWA
         async function loginSiswa() {
             const rawInput = document.getElementById('nisInput').value.trim();
             const errElem = document.getElementById('siswaLoginErr');
@@ -181,7 +184,6 @@
                 return;
             }
 
-            // Pencocokan NIS fleksibel (4 digit atau 5 digit)
             const data = listPemilih.find(item => String(item.nis).trim() === rawInput);
 
             if (!data) {
@@ -228,7 +230,7 @@
             });
         }
 
-        // SIMPAN HAK PILIH KE SUPABASE (SUDAH DIPERBAIKI)
+        // SIMPAN HAK PILIH KE SUPABASE
         async function pilihKandidat(noPaslon, namaPaslon) {
             if(!confirm(`Apakah kamu yakin ingin memilih Paslon ${noPaslon}:\n${namaPaslon}?`)) return;
 
@@ -267,6 +269,9 @@
                 document.getElementById('adminLoginSection').classList.add('hidden');
                 document.getElementById('adminDashboardSection').classList.remove('hidden');
                 renderDashboardAdmin();
+                
+                // Auto-refresh data admin setiap 5 detik
+                autoRefreshInterval = setInterval(renderDashboardAdmin, 5000);
             } else {
                 document.getElementById('adminLoginErr').innerText = "Username atau Password Admin Salah!";
             }
@@ -279,13 +284,13 @@
                 .order('nis', { ascending: true });
 
             if (error) {
-                alert("Gagal memuat data admin: " + error.message);
+                console.error("Gagal memuat data admin:", error.message);
                 return;
             }
 
-            // Hitung suara paslon (toleran format "01", "1", "02", "2")
-            let suara01 = listPemilih.filter(p => String(p.pilihan).trim() === '01' || String(p.pilihan).trim() === '1').length;
-            let suara02 = listPemilih.filter(p => String(p.pilihan).trim() === '02' || String(p.pilihan).trim() === '2').length;
+            // Hitung suara paslon (toleran berbagai format)
+            let suara01 = listPemilih.filter(p => p.pilihan && (String(p.pilihan).trim() === '01' || String(p.pilihan).trim() === '1')).length;
+            let suara02 = listPemilih.filter(p => p.pilihan && (String(p.pilihan).trim() === '02' || String(p.pilihan).trim() === '2')).length;
 
             const rekapTbl = document.getElementById('rekapSuaraTbl');
             rekapTbl.innerHTML = `
@@ -305,6 +310,7 @@
         }
 
         function logoutAdmin() {
+            if(autoRefreshInterval) clearInterval(autoRefreshInterval);
             location.reload();
         }
     </script>
