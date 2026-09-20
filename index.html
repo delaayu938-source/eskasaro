@@ -165,7 +165,7 @@
         async function loginSiswa() {
             const nisInput = document.getElementById('nisInput').value.trim();
             const errElem = document.getElementById('siswaLoginErr');
-            errElem.innerText = "";
+            errElem.innerText = "Memeriksa NIS...";
 
             if (!nisInput) {
                 errElem.innerText = "Masukkan NIS terlebih dahulu!";
@@ -189,6 +189,7 @@
                 return;
             }
 
+            errElem.innerText = "";
             activeSiswaNIS = data.nis;
             document.getElementById('namaSiswaTxt').innerText = activeSiswaNIS;
             document.getElementById('siswaLoginSection').classList.add('hidden');
@@ -252,8 +253,8 @@
         }
 
         function loginAdmin() {
-            const user = document.getElementById('adminUser').value;
-            const pass = document.getElementById('adminPass').value;
+            const user = document.getElementById('adminUser').value.trim();
+            const pass = document.getElementById('adminPass').value.trim();
 
             if (user === "delaayu" && pass === "ditacantik") {
                 document.getElementById('adminLoginSection').classList.add('hidden');
@@ -267,7 +268,8 @@
         async function renderDashboardAdmin() {
             const { data: listPemilih, error } = await _supabase
                 .from('pemilih')
-                .select('*');
+                .select('*')
+                .order('nis', { ascending: true });
 
             if (error) {
                 alert("Gagal memuat data admin: " + error.message);
@@ -299,4 +301,11 @@
         }
     </script>
 </body>
-</html>
+</html>    
+        
+               
+           
+
+     
+                              
+           
