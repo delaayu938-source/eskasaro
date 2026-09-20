@@ -161,30 +161,36 @@
 
         let activeSiswaNIS = null;
 
-        // LOGIKA SISWA (CEK NIS KE SUPABASE)
+        // LOGIKA SISWA (CEK NIS KE SUPABASE - BISA 4 DIGIT & 5 DIGIT)
         async function loginSiswa() {
-            const nisInput = document.getElementById('nisInput').value.trim();
+            const rawInput = document.getElementById('nisInput').value.trim();
             const errElem = document.getElementById('siswaLoginErr');
             errElem.innerText = "Memeriksa NIS...";
 
-            if (!nisInput) {
+            if (!rawInput) {
                 errElem.innerText = "Masukkan NIS terlebih dahulu!";
                 return;
             }
 
-            // Ambil data NIS dari Supabase
-            const { data, error } = await _supabase
+            // Cari data di Supabase
+            const { data: listPemilih, error } = await _supabase
                 .from('pemilih')
-                .select('*')
-                .eq('nis', nisInput)
-                .maybeSingle();
+                .select('*');
 
-            if (error || !data) {
-                errElem.innerText = "NIS tidak terdaftar di database!";
+            if (error || !listPemilih) {
+                errElem.innerText = "Gagal terhubung ke database!";
                 return;
             }
 
-            if (data.pilihan !== null && data.pilihan !== "") {
+            // Cocokkan NIS dengan mengabaikan spasi dan tipe data (4 atau 5 digit)
+            const data = listPemilih.find(item => String(item.nis).trim() === rawInput);
+
+            if (!data) {
+                errElem.innerText = "NIS " + rawInput + " tidak terdaftar di database!";
+                return;
+            }
+
+            if (data.pilihan !== null && data.pilihan !== "" && data.pilihan !== undefined) {
                 errElem.innerText = "NIS ini sudah digunakan untuk memilih!";
                 return;
             }
@@ -301,11 +307,4 @@
         }
     </script>
 </body>
-</html>    
-        
-               
-           
-
-     
-                              
-           
+</html>
