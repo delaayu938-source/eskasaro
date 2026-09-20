@@ -161,7 +161,7 @@
 
         let activeSiswaNIS = null;
 
-        // LOGIKA SISWA (CEK NIS KE SUPABASE - BISA 4 DIGIT & 5 DIGIT)
+        // LOGIKA SISWA (CEK NIS KE SUPABASE)
         async function loginSiswa() {
             const rawInput = document.getElementById('nisInput').value.trim();
             const errElem = document.getElementById('siswaLoginErr');
@@ -172,7 +172,6 @@
                 return;
             }
 
-            // Cari data di Supabase
             const { data: listPemilih, error } = await _supabase
                 .from('pemilih')
                 .select('*');
@@ -182,7 +181,7 @@
                 return;
             }
 
-            // Cocokkan NIS dengan mengabaikan spasi dan tipe data (4 atau 5 digit)
+            // Pencocokan NIS fleksibel (4 digit atau 5 digit)
             const data = listPemilih.find(item => String(item.nis).trim() === rawInput);
 
             if (!data) {
@@ -196,7 +195,7 @@
             }
 
             errElem.innerText = "";
-            activeSiswaNIS = data.nis;
+            activeSiswaNIS = String(data.nis).trim();
             document.getElementById('namaSiswaTxt').innerText = activeSiswaNIS;
             document.getElementById('siswaLoginSection').classList.add('hidden');
             document.getElementById('votingSection').classList.remove('hidden');
@@ -229,14 +228,16 @@
             });
         }
 
-        // SIMPAN HAK PILIH KE SUPABASE
+        // SIMPAN HAK PILIH KE SUPABASE (SUDAH DIPERBAIKI)
         async function pilihKandidat(noPaslon, namaPaslon) {
             if(!confirm(`Apakah kamu yakin ingin memilih Paslon ${noPaslon}:\n${namaPaslon}?`)) return;
 
+            const targetNis = String(activeSiswaNIS).trim();
+
             const { error } = await _supabase
                 .from('pemilih')
-                .update({ pilihan: noPaslon })
-                .eq('nis', activeSiswaNIS);
+                .update({ pilihan: String(noPaslon) })
+                .eq('nis', targetNis);
 
             if (error) {
                 alert("Gagal menyimpan suara: " + error.message);
@@ -246,7 +247,7 @@
             }
         }
 
-        // LOGIKA ADMIN (MEMBACA HASIL DARI SUPABASE)
+        // LOGIKA ADMIN
         function showAdminLogin() {
             document.getElementById('siswaLoginSection').classList.add('hidden');
             document.getElementById('votingSection').classList.add('hidden');
@@ -282,9 +283,9 @@
                 return;
             }
 
-            // Hitung suara paslon secara dinamis dari Supabase
-            let suara01 = listPemilih.filter(p => p.pilihan === '01').length;
-            let suara02 = listPemilih.filter(p => p.pilihan === '02').length;
+            // Hitung suara paslon (toleran format "01", "1", "02", "2")
+            let suara01 = listPemilih.filter(p => String(p.pilihan).trim() === '01' || String(p.pilihan).trim() === '1').length;
+            let suara02 = listPemilih.filter(p => String(p.pilihan).trim() === '02' || String(p.pilihan).trim() === '2').length;
 
             const rekapTbl = document.getElementById('rekapSuaraTbl');
             rekapTbl.innerHTML = `
@@ -295,7 +296,8 @@
             const dptTbl = document.getElementById('dptTbl');
             dptTbl.innerHTML = "";
             listPemilih.forEach(s => {
-                const statusBadge = (s.pilihan !== null && s.pilihan !== "") 
+                const hasVoted = s.pilihan !== null && s.pilihan !== "" && s.pilihan !== undefined;
+                const statusBadge = hasVoted 
                     ? `<b style="color: green;">Sudah Memilih (Paslon ${s.pilihan})</b>` 
                     : `<span style="color: red;">Belum Memilih</span>`;
                 dptTbl.innerHTML += `<tr><td>${s.nis}</td><td>${statusBadge}</td></tr>`;
